@@ -1,1 +1,15 @@
 
+test stages:
+  - test
+  - build
+
+yarn_test:
+    image:node:18-bullseye
+    stage: test
+    script:
+        - yarn install
+        - yarn test
+    build_stage:
+        stage: build
+        image:docker:24
+        services:
