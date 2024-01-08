@@ -13,7 +13,7 @@ yarn_test:
   script:
     - yarn install
     - yarn test
-build_stage:
+build_image:
   stage: build
   image: docker:24
   services:
