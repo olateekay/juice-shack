@@ -12,17 +12,17 @@ yarn-test:
     script:
         - yarn install
         - yarn test
-
-build-image:
-    stage: build
-    image: docker:24
-    services:
-        - docker:24-dind
-    variables:
-      DOCKER_PASS: *3VyVkpsL#%W$u@l
-      DOCKER_USER: mahsam1        
-    before_script:
-        - echo $DOCKER_PASS | docker login -u $DOCKER_USER --password_stdin    
-    script: 
-        - docker build -t $IMAGE_NAME:$IMAGE_TAG .  
-        - docker push $IMAGE_NAME:$IMAGE_TAG              
+build_image:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_PASS: *3VyVkpsL#%W$u@l
+    DOCKER_USER: mahsam1
+  before_script:
+    - echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+  script:
+    - docker build -t $IMAGE_NAME:$IMAGE_TAG .
+    - docker push $IMAGE_NAME:$IMAGE_TAG
+            
