@@ -1,6 +1,6 @@
 variables:
     IMAGE_NAME: mahsam1/demo-app
-    IMAGE_TAG: juice-shop:1.1
+    IMAGE_TAG: 1.1
 
 stages:
     - cache 
