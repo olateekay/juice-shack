@@ -48,8 +48,6 @@ gitleaks:
    - gitleaks detect --verbose --source .  
   allow-failure: true
 
-
-
 build_image:
   stage: build
   image: docker:24
@@ -63,5 +61,3 @@ build_image:
   script:
     - docker build -t $IMAGE_NAME:$IMAGE_TAG .
     - docker push $IMAGE_NAME:$IMAGE_TAG
-            
-
