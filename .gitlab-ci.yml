@@ -46,7 +46,7 @@ gitleaks:
     entrypoint: [""]
   script:
    - gitleaks detect --verbose --source .  
-   allow-failure: true
+  allow-failure: true
 
 
 
