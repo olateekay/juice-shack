@@ -48,6 +48,16 @@ gitleaks:
    - gitleaks detect --verbose --source .  
   allow_failure: true
 
+njsscan:
+  stage: test
+  image: python
+  before_script:
+      - pip3 install --upgrade njsscan
+  script:
+      - njsscan --exit-warning .
+  allow_failure: true    
+
+
 build_image:
   stage: build
   image: docker:24
