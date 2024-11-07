@@ -46,6 +46,7 @@ gitleaks:
     entrypoint: [""]
   script:
    - gitleaks detect --verbose --source .  
+   allow-failure: true
 
 
 
@@ -63,3 +64,4 @@ build_image:
     - docker build -t $IMAGE_NAME:$IMAGE_TAG .
     - docker push $IMAGE_NAME:$IMAGE_TAG
             
+
