@@ -41,10 +41,11 @@ yarn-test:
 
 gitleaks:
   stage: test
-  image: zricethezav/gitleaks
-  entrypoint: [""]
-script:
-  - gitleaks detect --verbose --source .  
+  image: 
+    name: zricethezav/gitleaks
+    entrypoint: [""]
+  script:
+   - gitleaks detect --verbose --source .  
 
 
 
