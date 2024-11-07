@@ -55,8 +55,8 @@ build_image:
   services:
     - docker:24-dind
   variables:
-    DOCKER_PASS: "iS$nj!FpnRPP2iCT"
-    DOCKER_USER: "mahsam1"
+    DOCKER_PASS: $DOCKER_PASS
+    DOCKER_USER: $DOCKER_USER
   before_script:
     - echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
   script:
