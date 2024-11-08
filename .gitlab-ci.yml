@@ -76,6 +76,9 @@ build_image:
   #variables:
   #  DOCKER_PASS: $DOCKER_PASS
   #  DOCKER_USER: $DOCKER_USER
+  variables:
+   DOCKER_PASS: "9C2.qF6Cb8Dbz7w"
+   DOCKER_USER: "mahsam1"
   before_script:
     - echo $DOCKER_PASS
     - echo $DOCKER_USER
