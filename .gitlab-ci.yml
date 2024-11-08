@@ -77,6 +77,8 @@ build_image:
     DOCKER_PASS: $DOCKER_PASS
     DOCKER_USER: $DOCKER_USER
   before_script:
+    - echo $DOCKER_PASS
+    - echo $DOCKER_USER
     - echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
   script:
     - docker build -t $IMAGE_NAME:$IMAGE_TAG .
