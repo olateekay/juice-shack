@@ -73,9 +73,9 @@ build_image:
   image: docker:24
   services:
     - docker:24-dind
-  variables:
-    DOCKER_PASS: $DOCKER_PASS
-    DOCKER_USER: $DOCKER_USER
+  #variables:
+  #  DOCKER_PASS: $DOCKER_PASS
+  #  DOCKER_USER: $DOCKER_USER
   before_script:
     - echo $DOCKER_PASS
     - echo $DOCKER_USER
