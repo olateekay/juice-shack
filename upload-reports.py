@@ -24,4 +24,4 @@ response = requests.post(url, headers=headers, data=data, files=files)
 if response.status_code == 201:
     print("Scan results imported successfully")
 else:
-    print('Failed to import scan results : {response.content}')    
+    print(f'Failed to import scan results : {response.content}')    
