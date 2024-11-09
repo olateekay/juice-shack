@@ -81,6 +81,8 @@ semgrep:
 upload-reports:
   stage: test
   image: python
+  before_script:
+    - pip3 install requests
   script:
     - python3 upload-reports.py
 
