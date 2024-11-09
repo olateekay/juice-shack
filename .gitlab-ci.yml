@@ -63,7 +63,7 @@ njsscan:
   artifacts:
     when: always
     paths:
-      -njsscan.sarif
+      - njsscan.sarif
 
 semgrep:
   stage: test
