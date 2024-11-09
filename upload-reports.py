@@ -9,7 +9,7 @@ url = 'https://demo.defectdojo.org/api/v2/import-scan/'
 data = {
     'active': True,
     'verified': True,
-    'scan-type': 'Gitleaks Scan',
+    'scan_type': 'Gitleaks Scan',
     'minimum-severity': 'Low',
     'engagement': 19
 
