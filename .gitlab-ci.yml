@@ -1,6 +1,14 @@
+# variables:
+#     IMAGE_NAME: mahsam1/demo-app
+#     IMAGE_TAG: 1.1
+
 variables:
-    IMAGE_NAME: mahsam1/demo-app
-    IMAGE_TAG: 1.1
+    - IMAGE_NAME: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/juice-shop-mah
+    - AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+    - AWS_ACCOUNT_ID: $AWS_ACCOUNT_ID
+    - AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+    - AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+
 
 stages:
     - cache 
@@ -100,36 +108,38 @@ retire:
     paths:
       - retire.json
 
-upload-reports:
-  stage: test
-  image: python
-  needs: ["gitleaks", "njsscan", "semgrep", "retire"]
-  when : always
-  before_script:
-    - pip3 install requests
-  script:
-    - python3 upload-reports.py gitleaks.json 
-    - python3 upload-reports.py njsscan.sarif 
-    - python3 upload-reports.py semgrep.json 
-    - python3 upload-reports.py retire.json
+# upload-reports:
+#   stage: test
+#   image: python
+#   needs: ["gitleaks", "njsscan", "semgrep", "retire"]
+#   when : always
+#   before_script:
+#     - pip3 install requests
+#   script:
+#     - python3 upload-reports.py gitleaks.json 
+#     - python3 upload-reports.py njsscan.sarif 
+#     - python3 upload-reports.py semgrep.json 
+#     - python3 upload-reports.py retire.json
 
 build_image:
   stage: build
   image: docker:24
   services:
     - docker:24-dind
-  #variables:
+
+  #variables first approach:
   #  DOCKER_PASS: $DOCKER_PASS
   #  DOCKER_USER: $DOCKER_USER
-  # variables:
+  # variables second approach:
   #  DOCKER_PASS: "hahahawithout@Or!"
   #  DOCKER_USER: "myusername"
   before_script:
     - echo $DOCKER_PASS
     - echo $DOCKER_USER
-    - echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+    - aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
   script:
-    - docker build -t $IMAGE_NAME:$IMAGE_TAG .
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest .
     - docker push $IMAGE_NAME:$IMAGE_TAG
+    - docker push $IMAGE_NAME:latest
 
     
