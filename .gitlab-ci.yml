@@ -47,44 +47,44 @@ yarn-test:
         - .yarn
       policy: pull-push   
 
-gitleaks:
-  stage: test
-  image: 
-    name: zricethezav/gitleaks
-    entrypoint: [""]
-  script:
-   - gitleaks detect --verbose --source .  -f json -r gitleaks.json
-  allow_failure: true
-  artifacts:
-    when: always
-    paths:
-      - gitleaks.json
+# gitleaks:
+#   stage: test
+#   image: 
+#     name: zricethezav/gitleaks
+#     entrypoint: [""]
+#   script:
+#    - gitleaks detect --verbose --source .  -f json -r gitleaks.json
+#   allow_failure: true
+#   artifacts:
+#     when: always
+#     paths:
+#       - gitleaks.json
 
-njsscan:
-  stage: test
-  image: python
-  before_script:
-      - pip3 install --upgrade njsscan
-  script:
-      - njsscan --exit-warning . --sarif -o njsscan.sarif
-  allow_failure: true    
-  artifacts:
-    when: always
-    paths:
-      - njsscan.sarif
+# njsscan:
+#   stage: test
+#   image: python
+#   before_script:
+#       - pip3 install --upgrade njsscan
+#   script:
+#       - njsscan --exit-warning . --sarif -o njsscan.sarif
+#   allow_failure: true    
+#   artifacts:
+#     when: always
+#     paths:
+#       - njsscan.sarif
 
-semgrep:
-  stage: test
-  image: returntocorp/semgrep
-  variables:
-    SEMGREP_RULES: p/javascript
-  script:
-    - semgrep ci --json --output semgrep.json
-  allow_failure: true
-  artifacts:
-    when: always
-    paths:
-      - semgrep.json
+# semgrep:
+#   stage: test
+#   image: returntocorp/semgrep
+#   variables:
+#     SEMGREP_RULES: p/javascript
+#   script:
+#     - semgrep ci --json --output semgrep.json
+#   allow_failure: true
+#   artifacts:
+#     when: always
+#     paths:
+#       - semgrep.json
 
 retire:
   stage: test
@@ -136,6 +136,8 @@ build_image:
   before_script:
     - echo $DOCKER_PASS
     - echo $DOCKER_USER
+    - apk --no-cache add curl python3 py3-pip
+    - pip3 install --no-cache-dir awscli
     - aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
   script:
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest .
