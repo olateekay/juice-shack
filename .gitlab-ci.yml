@@ -137,7 +137,9 @@ build_image:
     - echo $DOCKER_PASS
     - echo $DOCKER_USER
     - apk --no-cache add curl python3 py3-pip
-    - pip3 install --no-cache-dir awscli
+    - python3 -m venv /tmp/venv  # Create a virtual environment
+    - source /tmp/venv/bin/activate  # Activate the virtual environment
+    - pip3 install --no-cache-dir awscli # Install awscli in v env
     - aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
   script:
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest .
