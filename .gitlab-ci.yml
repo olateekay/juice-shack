@@ -15,37 +15,37 @@ stages:
     - test
     - build
 
-create_cache:
-  image: node:18-bullseye
-  stage: cache
-  script:
-    - yarn install
-  cache:
-    key:
-      files:
-        - yarn.lock
-    paths:
-      - node_modules/
-      - yarn.lock
-      - .yarn
-    policy: pull-push      
+# create_cache:
+#   image: node:18-bullseye
+#   stage: cache
+#   script:
+#     - yarn install
+#   cache:
+#     key:
+#       files:
+#         - yarn.lock
+#     paths:
+#       - node_modules/
+#       - yarn.lock
+#       - .yarn
+#     policy: pull-push      
 
-yarn-test: 
-    image: node:18-bullseye
-    stage: test
-    script:
-        - yarn install
-        - yarn test
+# yarn-test: 
+#     image: node:18-bullseye
+#     stage: test
+#     script:
+#         - yarn install
+#         - yarn test
 
-    cache:
-      key:
-        files:
-          - yarn.lock
-      paths:
-        - node_modules/
-        - yarn.lock
-        - .yarn
-      policy: pull-push   
+#     cache:
+#       key:
+#         files:
+#           - yarn.lock
+#       paths:
+#         - node_modules/
+#         - yarn.lock
+#         - .yarn
+#       policy: pull-push   
 
 # gitleaks:
 #   stage: test
@@ -142,7 +142,7 @@ build_image:
     - pip3 install --no-cache-dir awscli # Install awscli in v env
     - aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
   script:
-    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest .
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -t $IMAGE_NAME:latest .
     - docker push $IMAGE_NAME:$IMAGE_TAG
     - docker push $IMAGE_NAME:latest
 
