@@ -20,7 +20,7 @@ create_cache:
   image: node:18-bullseye
   stage: cache
   script:
-    - yarn install
+    - brew install yarn
   cache:
     key:
       files:
