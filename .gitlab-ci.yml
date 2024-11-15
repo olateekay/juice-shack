@@ -122,29 +122,45 @@ create_cache:
 #     - python3 upload-reports.py semgrep.json 
 #     - python3 upload-reports.py retire.json
 
+# build_image:
+#   stage: build
+#   image: docker:24
+#   services:
+#     - docker:24-dind
+
+#   #variables first approach:
+#   #  DOCKER_PASS: $DOCKER_PASS
+#   #  DOCKER_USER: $DOCKER_USER
+#   # variables second approach:
+#   #  DOCKER_PASS: "hahahawithout@Or!"
+#   #  DOCKER_USER: "myusername"
+#   before_script:
+#     - echo $DOCKER_PASS
+#     - echo $DOCKER_USER
+#     - apk --no-cache add curl python3 py3-pip
+#     - python3 -m venv /tmp/venv  # Create a virtual environment
+#     - source /tmp/venv/bin/activate  # Activate the virtual environment
+#     - pip3 install --no-cache-dir awscli # Install awscli in v env
+#     - aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+#   script:
+#     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -t $IMAGE_NAME:latest .
+#     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
+#     - docker push $IMAGE_NAME:latest
+
 build_image:
   stage: build
-  image: docker:24
-  services:
-    - docker:24-dind
-
-  #variables first approach:
-  #  DOCKER_PASS: $DOCKER_PASS
-  #  DOCKER_USER: $DOCKER_USER
-  # variables second approach:
-  #  DOCKER_PASS: "hahahawithout@Or!"
-  #  DOCKER_USER: "myusername"
   before_script:
+    - echo "Setting up environment..."
     - echo $DOCKER_PASS
     - echo $DOCKER_USER
-    - apk --no-cache add curl python3 py3-pip
+    - brew install curl python  # Install curl and Python if not already installed
     - python3 -m venv /tmp/venv  # Create a virtual environment
     - source /tmp/venv/bin/activate  # Activate the virtual environment
-    - pip3 install --no-cache-dir awscli # Install awscli in v env
+    - pip install --no-cache-dir awscli  # Install AWS CLI in the virtual environment
     - aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
   script:
+    - echo "Building Docker image..."
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -t $IMAGE_NAME:latest .
+    - echo "Pushing Docker images..."
     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
-    - docker push $IMAGE_NAME:latest
-
-    
+    - docker push $IMAGE_NAME:latest    
