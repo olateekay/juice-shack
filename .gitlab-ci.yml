@@ -157,7 +157,7 @@ build_image:
     - python3 -m venv /tmp/venv  # Create a virtual environment
     - source /tmp/venv/bin/activate  # Activate the virtual environment
     - pip install --no-cache-dir awscli  # Install AWS CLI in the virtual environment
-    - aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+    - aws ecr get-login-password --region $AWS_DEFAULT_REGION --no-include-email | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
   script:
     - echo "Building Docker image..."
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -t $IMAGE_NAME:latest .
