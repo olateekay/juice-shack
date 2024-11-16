@@ -185,10 +185,8 @@ deploy_image:
     - echo "Connecting to server..."
     - echo $SERVER_IP
     - echo $SERVER_USER
-    - ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "
-        aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com &&
-        docker pull $IMAGE_NAME:latest || exit 1
-      "
+    - ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com &&
+        docker pull $IMAGE_NAME:latest || exit 1"
     - ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker stop juice-shop-mah || true && docker rm juice-shop-mah || true" 
     - ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker run -d --name juice-shop-mah -p 3000:3000 $IMAGE_NAME:latest"
 
