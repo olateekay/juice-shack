@@ -181,7 +181,6 @@ deploy_image:
     - chmod 700 ~/.ssh
 
   script:
-    script:
     - echo "Connecting to server..."
     - echo $SERVER_IP
     - echo $SERVER_USER
