@@ -172,7 +172,8 @@ deploy_image:
   stage: deploy
   image: debian:bullsete-slim
   before_script:
-    - apt update -y && apt install openssh-client -y
+    - brew install openssh
+    - ssh -V
     - eval $(ssh-agent -s)
     - chmod 400 "$SSH_PRIVATE_KEY"
     - ssh-add "$SSH_PRIVATE_KEY"
