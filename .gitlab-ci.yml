@@ -179,7 +179,12 @@ deploy_image:
     - ssh-add "$SSH_PRIVATE_KEY"
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
+    - brew install curl python  # Install curl and Python if not already installed
+    - python3 -m venv /tmp/venv  # Create a virtual environment
+    - source /tmp/venv/bin/activate  # Activate the virtual environment
+    - pip install --no-cache-dir awscli  # Install AWS CLI in the virtual environment
     - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+
   script:
     - echo $SERVER_IP
     - echo $SERVER_USER
