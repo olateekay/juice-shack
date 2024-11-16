@@ -14,10 +14,10 @@ variables:
 
 
 stages:
-    - cache 
-    - test
-    - build
-    - deploy
+  - cache 
+  - test
+  - build
+  - deploy
 
 create_cache:
   image: node:18-bullseye
