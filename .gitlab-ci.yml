@@ -170,7 +170,7 @@ build_image:
 
 deploy_image:
   stage: deploy
-  image: debian:bullsete-slim
+  image: debian:bullseye-slim
   before_script:
     - brew install openssh
     - ssh -V
