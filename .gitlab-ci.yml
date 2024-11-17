@@ -172,11 +172,11 @@ deploy_image:
   stage: deploy
   image: macos:latest
   before_script:
-    - brew install openssh
     - ssh -V
     - eval $(ssh-agent -s)
-    - chmod 400 "$SSH_PRIVATE_KEY"
-    - ssh-add "$SSH_PRIVATE_KEY"
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 400 ~/.ssh/id_rsa
+    - ssh-add ~/.ssh/id_rsa
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
 
