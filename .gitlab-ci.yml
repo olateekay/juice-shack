@@ -22,7 +22,24 @@ create_cache:
          - .yarn
         policy: pull-push
 
+gitleaks:
+    stage: test
+    image:
+        name: zricethezav/gitleaks
+        entrypoint: [""]
+    script:
+        - gitleaks detect --verbose --source .
+    allow_failure: true
 
+njsscan:
+    stage: test
+    image: python
+    before_script:
+        - pip3 install --upgrade njsscan
+    script:
+        - njsscan .
+
+        
 yarn_test:
     image: node:18-bullseye
     stage: test
