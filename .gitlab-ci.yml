@@ -51,23 +51,32 @@ semgrep:
 
         
 yarn_test:
-    image: node:18-bullseye
-    stage: test
-    script:
-        - yarn install
-        - yarn test
+  image: node:18-bullseye
+  stage: test
+  script:
+    - yarn install
+    - yarn test
+  cache:
+    key:
+      files:
+        - yarn.lock
+    paths:
+      - node_modules/
+      - yarn.lock
+      - .yarn
+    policy: pull
+
 
 build_image:
-    stage: build
-    image: docker:24
-    services:
-        - docker:24-dind
-    variables:
-        DOCKER_PASS: $DOCKER_PASS
-        DOCKER_USER: $DOCKER_USER
-    before_script:
-        - echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-    script:
-        - docker build -t $IMAGE_NAME:$IMAGE_TAG .
-        - docker push $IMAGE_NAME:$IMAGE_TAG
-    allow_failure: true
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_PASS: $DOCKER_PASS
+    DOCKER_USER: $DOCKER_USER
+  before_script:
+    - echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+  script:
+    - docker build -t $IMAGE_NAME:$IMAGE_TAG .
+    - docker push $IMAGE_NAME:$IMAGE_TAG
