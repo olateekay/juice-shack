@@ -28,8 +28,12 @@ gitleaks:
         name: zricethezav/gitleaks
         entrypoint: [""]
     script:
-        - gitleaks detect --verbose --source .
+        - gitleaks detect --verbose --source . -f json -r gitleaks.json
     allow_failure: true
+    artifacts:
+      when: always
+      paths:
+      - gitleaks.json
 
 njsscan:
     stage: test
@@ -37,8 +41,13 @@ njsscan:
     before_script:
         - pip3 install --upgrade njsscan
     script:
-        - njsscan --exit-warning .
+        - njsscan --exit-warning . --sarif -o njsscan.sarif
     allow_failure: true
+    artifacts:
+      when: always
+      paths:
+      - njsscan.sarif
+
 
 semgrep:
     stage: test
@@ -46,8 +55,13 @@ semgrep:
     variables:
         SEMGREP_RULES: p/javascript
     script:
-        - semgrep ci
+        - semgrep ci --json --output semgrep.json
     allow_failure: true
+    artifacts:
+      when: always
+      paths:
+      - semgrep.json
+
 
         
 yarn_test:
