@@ -89,7 +89,6 @@ upload_reports:
     - python3 upload-reports.py njsscan.sarif
     - python3 upload-reports.py semgrep.json
 
-
 build_image:
   stage: build
   image: docker:24
