@@ -11,7 +11,7 @@ elif file_name == 'njsscan.sarif':
 elif file_name == 'semgrep.json':
     scan_type = 'Semgrep JSON Report'
 elif file_name == 'retire.json':
-    scan_type = 'Retire.js Scan
+    scan_type = 'Retire.js Scan'
 
 
 headers = {
