@@ -1,75 +1,140 @@
 # .gitlab-ci.yml
-# This file defines a simple CI/CD pipeline for the OWASP Juice Shop application,
-# which is a Node.js-based project. We have two primary stages: 'test' and 'build'.
+# This file defines a CI/CD pipeline for the OWASP Juice Shop project, a Node.js-based
+# application. The pipeline is split into three stages: 'cache', 'test', and 'build'.
+# Each stage serves a distinct purpose in ensuring fast builds, code quality, and
+# containerized packaging of the application.
 
-# -------------------------------------------------------------------
+#######################################################################################
 # TOP-LEVEL VARIABLES
-# -------------------------------------------------------------------
-# These variables are accessible by all jobs unless they are overridden
-# in a job-specific 'variables:' block.
+#######################################################################################
+# These variables are global and accessible by all jobs. 
+# They help avoid hardcoding or repeating values in multiple places.
 variables:
-  IMAGE_NAME: dkhanduke/demo-app     # The Docker image repository name
-  IMAGE_TAG: juice-shop-1.1         # Tag used for versioning the Docker image
+  IMAGE_NAME: dkhanduke/demo-app      # The Docker Hub repository name where the image is pushed
+  IMAGE_TAG: juice-shop-1.1          # A version-like tag for the Docker image (e.g., 'juice-shop-1.1')
 
+#######################################################################################
+# STAGES
+#######################################################################################
+# IMPORTANT NOTE: GitLab runs stages strictly in the order listed below.
+# If 'cache' fails, 'test' won't run; if 'test' fails, 'build' won't run.
 stages:
-  - test   # Stage 1: Run tests (placeholder for Yarn tests)
-  - build  # Stage 2: Build & push Docker images
+  - cache   
+  # Stage 1: Cache Yarn dependencies
+  - test    
+  # Stage 2: Run tests
+  - build   
+  # Stage 3: Build & push the Docker image
 
-# -------------------------------------------------------------------
-# TEST JOB
-# -------------------------------------------------------------------
-yarn_test:
-  # We use Node.js 18 (Debian Bullseye variant) to have Node and Yarn readily available.
+#######################################################################################
+# STAGE 1: CREATE_CACHE
+#######################################################################################
+# This job is dedicated to installing Yarn dependencies once and caching them, 
+# so future jobs (like 'test') can reuse the dependencies without re-downloading.
+create_cache:
   image: node:18-bullseye
+  # We use the official 'node:18-bullseye' image because it has Node.js and Yarn
+  # already installed, saving time and setup steps.
 
-  # This job belongs to the 'test' stage.
-  stage: test
+  stage: cache
+  # This job belongs to the 'cache' stage, which is the first stage in our pipeline.
 
-  # We install dependencies and run tests via Yarn.
   script:
     - yarn install
+    # 'yarn install' reads package.json, downloads all required Node.js libraries,
+    # and places them in 'node_modules'. Yarn is a package manager (like npm)
+    # that helps manage dependencies for JavaScript and Node.js projects.
+
+  cache:
+    key:
+      files:
+        - yarn.lock
+        # yarn.lock is an auto-generated file Yarn creates to lock in the exact versions
+        # of all dependencies. This ensures everyone using the project installs 
+        # the same versions. If yarn.lock changes, it means dependencies or their 
+        # versions changed, so we need a new cache.
+    paths:
+      - node_modules/
+      # node_modules is the folder where Yarn places all downloaded libraries.
+      - yarn.lock
+      # Including yarn.lock in cache paths helps keep it with node_modules for reference.
+      - .yarn
+      # .yarn is a hidden folder Yarn may use for additional data or offline caching.
+    policy: pull-push
+    # 'pull-push' means this job will try to use an existing cache (pull),
+    # and if there are changes (like updated dependencies), it will update
+    # or replace the cache (push).
+
+#######################################################################################
+# STAGE 2: YARN_TEST
+#######################################################################################
+# After 'create_cache' completes, we have a cached version of node_modules. 
+# The 'yarn_test' job uses that cache to speed up dependency installation 
+# and then runs the project's test scripts.
+yarn_test:
+  image: node:18-bullseye
+  # Again, using the Node.js + Yarn image for consistency.
+
+  stage: test
+  # This job belongs to the 'test' stage and runs after 'cache'.
+
+  script:
+    - yarn install
+    # Even though we've already run 'yarn install' in create_cache,
+    # Yarn checks if node_modules are present. If so, it will skip re-downloading 
+    # everything. If something changed, Yarn will handle any updates.
     - yarn test
+    # 'yarn test' is a placeholder command for running the project's tests.
+    # For OWASP Juice Shop, this could include unit tests, integration tests, etc.
 
-# -------------------------------------------------------------------
-# BUILD JOB
-# -------------------------------------------------------------------
+  cache:
+    key:
+      files:
+        - yarn.lock
+    paths:
+      - node_modules/
+      - yarn.lock
+      - .yarn
+    policy: pull
+    # 'policy: pull' here means we ONLY fetch (pull) the existing cache 
+    # without updating it. This prevents overwriting the cache created by 'create_cache'.
+
+#######################################################################################
+# STAGE 3: BUILD_IMAGE
+#######################################################################################
+# If the tests pass successfully, this job will build a Docker image of the project
+# and push it to Docker Hub (or any other Docker registry).
 build_image:
-  # This job is in the 'build' stage, so it will run after 'yarn_test' completes successfully.
-  stage: build
-
-  # Use Docker v24 to have the latest Docker CLI tools installed in the container.
   image: docker:24
+  # We use the Docker 24 image, which includes Docker CLI tools, so we can run
+  # commands like 'docker build' and 'docker push' inside this container.
 
-  # Services needed for Docker-in-Docker (dind), allowing us to run Docker commands.
+  stage: build
+  # The last stage in the pipeline, triggered only after 'test' completes successfully.
+
   services:
     - docker:24-dind
+    # Docker-in-Docker (dind) provides a running Docker daemon inside the container.
+    # This allows us to build and push Docker images within GitLab CI,
+    # without installing Docker on the host machine.
 
-  # -----------------------------------------------------------------
-  # JOB-SPECIFIC VARIABLES (OVERRIDING OR ADDING TO TOP-LEVEL VARIABLES)
-  # -----------------------------------------------------------------
-  # For demo purposes, we place Docker credentials here.
-  # In a real scenario, credentials should be stored as CI/CD variables
-  # in GitLab's settings or in a secrets manager.
+  # DEMO CREDENTIALS: In a real-world scenario, you should store credentials in
+  # GitLab CI/CD Settings (e.g., masked/protected variables), not in the code.
   variables:
     DOCKER_PASS: Blingo123
     DOCKER_USER: dkhanduke
 
-  # -----------------------------------------------------------------
-  # BEFORE_SCRIPT: Docker Login
-  # -----------------------------------------------------------------
-  # We log in to Docker Hub using the credentials specified above.
-  # The '--password-stdin' method avoids storing the password in the shell history.
   before_script:
+    # IMPORTANT NOTE: Using the '--password-stdin' flag to avoid writing 
+    # the password directly into the shell history or logs.
     - echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
 
-  # -----------------------------------------------------------------
-  # SCRIPT: BUILD & PUSH THE DOCKER IMAGE
-  # -----------------------------------------------------------------
   script:
-    # Build the Docker image using the Dockerfile in the current directory ('.').
-    # We reference the top-level variables $IMAGE_NAME and $IMAGE_TAG to construct
-    # the full image name (e.g., dkhanduke/demo-app:juice-shop-1.1).
+    # 1) Build the Docker image using the project's Dockerfile from the current directory.
+    #    '-t' stands for 'tag'. We combine $IMAGE_NAME and $IMAGE_TAG to form a complete name,
+    #    for example: dkhanduke/demo-app:juice-shop-1.1
     - docker build -t $IMAGE_NAME:$IMAGE_TAG .
 
-    # Push the newly built image to Docker Hub (or the configured registry).
+    # 2) Push the image to the specified repository, e.g., Docker Hub.
+    #    Make sure your Docker account and repo are properly set up.
     - docker push $IMAGE_NAME:$IMAGE_TAG
