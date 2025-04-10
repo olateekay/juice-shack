@@ -1,0 +1,75 @@
+# .gitlab-ci.yml
+# This file defines a simple CI/CD pipeline for the OWASP Juice Shop application,
+# which is a Node.js-based project. We have two primary stages: 'test' and 'build'.
+
+# -------------------------------------------------------------------
+# TOP-LEVEL VARIABLES
+# -------------------------------------------------------------------
+# These variables are accessible by all jobs unless they are overridden
+# in a job-specific 'variables:' block.
+variables:
+  IMAGE_NAME: dkhanduke/demo-app     # The Docker image repository name
+  IMAGE_TAG: juice-shop-1.1         # Tag used for versioning the Docker image
+
+stages:
+  - test   # Stage 1: Run tests (placeholder for Yarn tests)
+  - build  # Stage 2: Build & push Docker images
+
+# -------------------------------------------------------------------
+# TEST JOB
+# -------------------------------------------------------------------
+yarn_test:
+  # We use Node.js 18 (Debian Bullseye variant) to have Node and Yarn readily available.
+  image: node:18-bullseye
+
+  # This job belongs to the 'test' stage.
+  stage: test
+
+  # We install dependencies and run tests via Yarn.
+  script:
+    - yarn install
+    - yarn test
+
+# -------------------------------------------------------------------
+# BUILD JOB
+# -------------------------------------------------------------------
+build_image:
+  # This job is in the 'build' stage, so it will run after 'yarn_test' completes successfully.
+  stage: build
+
+  # Use Docker v24 to have the latest Docker CLI tools installed in the container.
+  image: docker:24
+
+  # Services needed for Docker-in-Docker (dind), allowing us to run Docker commands.
+  services:
+    - docker:24-dind
+
+  # -----------------------------------------------------------------
+  # JOB-SPECIFIC VARIABLES (OVERRIDING OR ADDING TO TOP-LEVEL VARIABLES)
+  # -----------------------------------------------------------------
+  # For demo purposes, we place Docker credentials here.
+  # In a real scenario, credentials should be stored as CI/CD variables
+  # in GitLab's settings or in a secrets manager.
+  variables:
+    DOCKER_PASS: Blingo123
+    DOCKER_USER: dkhanduke
+
+  # -----------------------------------------------------------------
+  # BEFORE_SCRIPT: Docker Login
+  # -----------------------------------------------------------------
+  # We log in to Docker Hub using the credentials specified above.
+  # The '--password-stdin' method avoids storing the password in the shell history.
+  before_script:
+    - echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+
+  # -----------------------------------------------------------------
+  # SCRIPT: BUILD & PUSH THE DOCKER IMAGE
+  # -----------------------------------------------------------------
+  script:
+    # Build the Docker image using the Dockerfile in the current directory ('.').
+    # We reference the top-level variables $IMAGE_NAME and $IMAGE_TAG to construct
+    # the full image name (e.g., dkhanduke/demo-app:juice-shop-1.1).
+    - docker build -t $IMAGE_NAME:$IMAGE_TAG .
+
+    # Push the newly built image to Docker Hub (or the configured registry).
+    - docker push $IMAGE_NAME:$IMAGE_TAG
