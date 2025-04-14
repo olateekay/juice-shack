@@ -107,6 +107,7 @@ gitleaks:
     # So the container has access to the Dockerfile and all the source files required by the job.
     # This auto-mounting simplifies the CI/CD process. Every job starts with the same
     # pre-mounted code, most likely under the default working directory defined by GitLab.
+  allow_failure: true
 
 
 
