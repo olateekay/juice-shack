@@ -74,6 +74,43 @@ yarn_test:
     policy: pull
     # The pull policy indicates that this job should only fetch the existing cache without updating it.
 
+# NEW: Test Stage – GitLeaks Integration in our CI/CD Pipeline
+# This job integrates GitLeaks into the pipeline to scan the source code for sensitive data leaks
+# Testing and validating the code is essential prior to building our image
+
+
+gitleaks:
+  stage: test
+  # This job is assigned to the 'test' stage so that it runs before the Docker image is built.
+  image:
+    name: zricethezav/gitleaks:latest
+    # The 'name' key specifies the exact Docker image to use, in this case the latest version
+    # of the GitLeaks image from Docker Hub. Using a mapping instead of a single string allows us
+    # to configure additional options. We have more flexibility whe running the image
+    entrypoint: [""]
+    # The 'entrypoint' key overrides the image's default command. Docker images typically have a
+    # default command (or entrypoint) that runs automatically when the container starts. By setting
+    # entrypoint to an empty array [""], we are disabling the default actions/behavior. 
+    # The image will not execute its built-in command (which might be to run GitLeaks immediately - not sure) when the
+    # container starts. Instead, we provide our own commands in the script section.
+    # Basically we are telling the container "Do not execute any command on startup - wait for the script commands."
+  script:
+    - gitleaks detect --verbose --source .
+    # The command 'gitleaks detect' runs GitLeaks to scan for secrets in the source code.
+    # The '--source .' parameter tells GitLeaks to scan the current directory.
+    # IMPORTANT NOTE: GitLaks works by parsing the output of git log -p command. !reference 
+    # Even if sensitive data is removed - history of the repo is still in tact, making it a security concern
+    #
+    # GitLab CI/CD automatically mounts the application source code into each container that runs a job.
+    # This means that the complete code repository is available within the container at a default working directory.
+    # We do not have to manually mount the repository (like with the 'docker run' command)
+    # So the container has access to the Dockerfile and all the source files required by the job.
+    # This auto-mounting simplifies the CI/CD process. Every job starts with the same
+    # pre-mounted code, most likely under the default working directory defined by GitLab.
+
+
+
+
 # STAGE 3: BUILD_IMAGE
 # This job builds a Docker image from the project and pushes it to a Docker registry (example Docker Hub).
 build_image:
