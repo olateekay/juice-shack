@@ -126,8 +126,8 @@ build_image:
   
   # Note: In a production environment, credentials must be secured using GitLab CI/CD variables. This is only being done for the sake of the project. 
   variables:
-    DOCKER_PASS: Blingo123   # This should normally be stored as a masked / protected variable.
-    DOCKER_USER: dkhanduke
+    DOCKER_PASS: $DOCKER_PASS
+    DOCKER_USER: $DOCKER_USER
 
   before_script:
     # Securely log in to Docker using the password provided via standard input. This avoids exposing the password in logs.
