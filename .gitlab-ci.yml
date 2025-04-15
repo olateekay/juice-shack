@@ -8,22 +8,21 @@
 # helping avoid hardcoding values in different parts of the pipeline.
 variables:
   IMAGE_NAME: dkhanduke/demo-app     # The Docker Hub repository name where the Docker image will be pushed.
-  IMAGE_TAG: juice-shop-1.1           # The version tag for the Docker image (example version identifier).
+  IMAGE_TAG: juice-shop-1.1          # The version tag for the Docker image (example version identifier).
 
 # STAGES
 # The stages are executed in a strict order. If a stage fails (example cache or test),
 # the following stages will not run.
 stages:
   - cache  
-  # First stage: Caches Yarn dependencies.
+  # First stage: Caches Yarn dependencies to speed up future jobs by reusing them.
   - test   
-  # Second stage: Runs tests on the code base. Logic - we built this out first.
+  # Second stage: Runs tests on the code base and performs security scans. Logic - we built this out first.
   - build 
   # Third stage: Builds the Docker image and pushes it to the registry.
 
 # STAGE 1: CREATE_CACHE
-# This job installs Yarn dependencies and caches them for later reuse. Caching improves
-# pipeline speed by avoiding repeated downloads.
+# This job installs Yarn dependencies and caches them for later reuse. Caching improves pipeline speed 
 create_cache:
   image: node:18-bullseye
   # Using the official Node.js image that comes with Yarn pre-installed.
@@ -59,7 +58,7 @@ yarn_test:
   
   script:
     - yarn install
-    # Ensure dependencies are present. Yarn will usually skip re-downloading if node_modules already exists.
+    # Ensure dependencies are present. Yarn will usually skip re-downloading if node_modules already exists from the cache.
     - yarn test
     # Execute the test suite defined for the project (could be unit tests, integration tests, etc.).
   
@@ -76,9 +75,7 @@ yarn_test:
 
 # NEW: Test Stage – GitLeaks Integration in our CI/CD Pipeline
 # This job integrates GitLeaks into the pipeline to scan the source code for sensitive data leaks
-# Testing and validating the code is essential prior to building our image
-
-
+# (example: API keys, passwords) across the Git history. Testing and validating the code is essential prior to building our image.
 gitleaks:
   stage: test
   # This job is assigned to the 'test' stage so that it runs before the Docker image is built.
@@ -86,7 +83,7 @@ gitleaks:
     name: zricethezav/gitleaks:latest
     # The 'name' key specifies the exact Docker image to use, in this case the latest version
     # of the GitLeaks image from Docker Hub. Using a mapping instead of a single string allows us
-    # to configure additional options. We have more flexibility whe running the image
+    # to configure additional options. We have more flexibility when running the image.
     entrypoint: [""]
     # The 'entrypoint' key overrides the image's default command. Docker images typically have a
     # default command (or entrypoint) that runs automatically when the container starts. By setting
@@ -95,50 +92,71 @@ gitleaks:
     # container starts. Instead, we provide our own commands in the script section.
     # Basically we are telling the container "Do not execute any command on startup - wait for the script commands."
   script:
-    - gitleaks detect --verbose --source .
+    - gitleaks detect --verbose --source . -f json -r gitleaks.json
     # The command 'gitleaks detect' runs GitLeaks to scan for secrets in the source code.
     # The '--source .' parameter tells GitLeaks to scan the current directory.
-    # IMPORTANT NOTE: GitLaks works by parsing the output of git log -p command. !reference 
-    # Even if sensitive data is removed - history of the repo is still in tact, making it a security concern
+    # IMPORTANT NOTE: GitLeaks works by parsing the output of git log -p command. 
+    # Even if sensitive data is removed - history of the repo is still intact, making it a security concern.
     #
     # GitLab CI/CD automatically mounts the application source code into each container that runs a job.
     # This means that the complete code repository is available within the container at a default working directory.
-    # We do not have to manually mount the repository (like with the 'docker run' command)
+    # We do not have to manually mount the repository (like with the 'docker run' command).
     # So the container has access to the Dockerfile and all the source files required by the job.
     # This auto-mounting simplifies the CI/CD process. Every job starts with the same
     # pre-mounted code, most likely under the default working directory defined by GitLab.
   allow_failure: true
+  # Allows the pipeline to continue even if secrets are detected, storing results for review.
+  artifacts:
+    when: always
+    # Stores the scan results regardless of success or failure.
+    paths:
+      - gitleaks.json
+    # Makes the scan results downloadable from the pipeline.
 
 njsscan:
   stage: test
-  # njsscan job is in the test stage as part of our SAST process.
+  # njsscan job is in the test stage as part of our SAST (Static Application Security Testing) process.
   # Since our application is built with Node.js, we need a scanner that can 
-  # analyze JavaScript code for security vulnerabilities
-  # njsscan is designed specifically for Node.js scanning.
+  # analyze JavaScript code for security vulnerabilities. njsscan is designed specifically for Node.js scanning.
   image: python
-  # njsscan is implemented as a Python package
+  # njsscan is implemented as a Python package.
   before_script:
     - pip3 install --upgrade njsscan
-    # Before we run the scan we want to ensure njsscan is actually downloaded and up-to-date
+    # Before we run the scan we want to ensure njsscan is actually downloaded and up-to-date.
 
   script:
-    - njsscan --exit-warning .
-    # Run njsscan to scan the entire repository (current directory)
+    - njsscan --exit-warning . --sarif -o njsscan.sarif
+    # sarif file format is compatible with DefectDojo - the centralized dashboard we will be using.
+    # Run njsscan to scan the entire repository (current directory) for security issues.
   allow_failure: true
+  # Pipeline continues even if vulnerabilities are found, allowing review of results.
 
+  artifacts:
+    when: always
+    # Stores artifacts whether the job succeeds or fails.
+    paths:
+      - njsscan.sarif
+    # Stores the scan results for later inspection.
 
 semgrep:
   stage: test
-  # Added in the test stage to perform SAST on our Node.js applicaiton. Layered security tools approach.
+  # Added in the test stage to perform SAST on our Node.js application. Layered security tools approach.
   image: returntocorp/semgrep
+  # Official Semgrep image for static analysis.
   variables:
     SEMGREP_RULES: p/javascript  
-    # Specifies the rules to scan for. In this case, we are scanning for javascript
+    # Specifies the rules to scan for JavaScript-specific vulnerabilities.
   script:
-    - semgrep ci  
+    - semgrep ci --json --output semgrep.json
     # Runs Semgrep in CI mode, which formats the output for integration in CI pipelines.
   allow_failure: true
-
+    # Allows the pipeline to proceed even if issues are detected.
+  artifacts:
+    when: always
+    # Artifacts are saved regardless of job outcome.
+    paths:
+      - semgrep.json
+    # Stores the scan results as a downloadable artifact.
 
 # STAGE 3: BUILD_IMAGE
 # This job builds a Docker image from the project and pushes it to a Docker registry (example Docker Hub).
@@ -153,10 +171,11 @@ build_image:
     - docker:24-dind
     # Docker-in-Docker (dind) provides a Docker daemon within the container, allowing the job to build and push images.
   
-  # Note: In a production environment, credentials must be secured using GitLab CI/CD variables. This is only being done for the sake of the project. 
+  # Note: In a production environment, credentials must be secured using GitLab CI/CD variables. 
   variables:
     DOCKER_PASS: $DOCKER_PASS
     DOCKER_USER: $DOCKER_USER
+    # Credentials for Docker registry login, stored securely as GitLab CI/CD variables.
 
   before_script:
     # Securely log in to Docker using the password provided via standard input. This avoids exposing the password in logs.
