@@ -122,8 +122,23 @@ njsscan:
     # Before we run the scan we want to ensure njsscan is actually downloaded and up-to-date
 
   script:
-    njsscan .
+    - njsscan --exit-warning .
     # Run njsscan to scan the entire repository (current directory)
+  allow_failure: true
+
+
+semgrep:
+  stage: test
+  # Added in the test stage to perform SAST on our Node.js applicaiton. Layered security tools approach.
+  image: returntocorp/semgrep
+  variables:
+    SEMGREP_RULES: p/javascript  
+    # Specifies the rules to scan for. In this case, we are scanning for javascript
+  script:
+    - semgrep ci  
+    # Runs Semgrep in CI mode, which formats the output for integration in CI pipelines.
+  allow_failure: true
+
 
 # STAGE 3: BUILD_IMAGE
 # This job builds a Docker image from the project and pushes it to a Docker registry (example Docker Hub).
