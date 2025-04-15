@@ -109,8 +109,21 @@ gitleaks:
     # pre-mounted code, most likely under the default working directory defined by GitLab.
   allow_failure: true
 
+njsscan:
+  stage: test
+  # njsscan job is in the test stage as part of our SAST process.
+  # Since our application is built with Node.js, we need a scanner that can 
+  # analyze JavaScript code for security vulnerabilities
+  # njsscan is designed specifically for Node.js scanning.
+  image: python
+  # njsscan is implemented as a Python package
+  before_script:
+    - pip3 install --upgrade njsscan
+    # Before we run the scan we want to ensure njsscan is actually downloaded and up-to-date
 
-
+  script:
+    njsscan .
+    # Run njsscan to scan the entire repository (current directory)
 
 # STAGE 3: BUILD_IMAGE
 # This job builds a Docker image from the project and pushes it to a Docker registry (example Docker Hub).
