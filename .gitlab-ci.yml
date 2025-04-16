@@ -158,31 +158,31 @@ semgrep:
       - semgrep.json
     # Stores the scan results as a downloadable artifact.
 
-upload_reports:
-  stage: test
-  # This job is in the 'test' stage to upload the results of the security scans.
-  image: python
-  # Using Python image to run the upload script.
+    upload_reports:
+      stage: test
+      image: python
+      when: always    # Ensures this job runs regardless of previous job status
 
-  before_script:
-    - pip3 install requests
-  script:
-    - python3 upload_reports.py
-    # Executes a Python script that uploads the scan results to DefectDojo.
-    # The script should be implemented to handle the upload process.
+      before_script:
+        - pip3 install requests
+      script:
+        - python3 upload_reports.py
 
-  dependencies:
-      - gitleaks
-      - njsscan
-      - semgrep
-    # Specifies that this job depends on the results of the previous jobs.
-    # It ensures that the artifacts from these jobs are available for this job.
-    # When we specify dependencies, GitLab CI/CD ensures that the artifacts from the specified jobs are downloaded and available in the current job's environment.
-    # GitLab automatically handles artifact management - when artifacts are created in a job,
-    # they are saved and then automatically downloaded in the execution environment of any following jobs
-    # that list the source job as a dependency. This means our Python upload script automatically gets
-    # access to gitleaks.json, njsscan.sarif, and semgrep.json without any additional configuration.
-    # All files from the dependent jobs are automatically available in the job's workspace.
+      needs:
+        - gitleaks
+        - njsscan
+        - semgrep
+      # 'needs' defines which jobs must complete before this job can run
+      # The 'when: always' ensures this job runs after the specified jobs
+      # complete, regardless of their success/failure status
+
+      # GitLab automatically downloads artifacts from the listed jobs 
+      # into this job's workspace. This means upload_reports.py will have
+      # access to:
+      # - gitleaks.json from gitleaks job
+      # - njsscan.sarif from njsscan job  
+      # - semgrep.json from semgrep job
+      # No additional configuration needed for artifact access
 
 
 
