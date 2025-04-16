@@ -164,6 +164,8 @@ upload_reports:
   image: python
   # Using Python image to run the upload script.
 
+  before_script:
+    - pip3 install requests
   script:
     - python3 upload_reports.py
     # Executes a Python script that uploads the scan results to DefectDojo.
