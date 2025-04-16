@@ -12,7 +12,7 @@ headers = {
 import os
 
 # URL for the DefectDojo API endpoint
-url = 'http://localhost:8080/api/v2/import-scan/'
+url = 'http://192.168.172.210:8080/api/v2/import-scan/'
 
 # Define multiple scan configurations
 data = [
