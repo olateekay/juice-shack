@@ -166,13 +166,10 @@ upload_reports:
     - pip3 install requests
   script:
     - python3 upload_reports.py
-  needs:
-    - gitleaks
-    - njsscan
-    - semgrep
-    # 'needs' defines which jobs must complete before this job can run
-    # The 'when: always' ensures this job runs after the specified jobs
-    # complete, regardless of their success/failure status
+  needs: ["gitleaks", "njsscan", "semgrep"]
+    # The 'needs' keyword specifies that this job depends on the completion of the listed jobs.
+    # This means that the upload_reports job will only run after gitleaks, njsscan, and semgrep jobs have completed.
+
     # GitLab automatically downloads artifacts from the listed jobs 
     # into this job's workspace. This means upload_reports.py will have
     # access to:
