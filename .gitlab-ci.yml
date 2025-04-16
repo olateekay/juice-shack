@@ -161,14 +161,16 @@ semgrep:
 upload_reports:
   stage: test
   image: python
+  needs: ["gitleaks", "njsscan", "semgrep"]
+  # The 'needs' keyword specifies that this job depends on the completion of the listed jobs.
+  # This means that the upload_reports job will only run after gitleaks, njsscan, and semgrep jobs have completed.
   when: always    # Ensures this job runs regardless of previous job status
   before_script:
     - pip3 install requests
   script:
-    - python3 upload_reports.py
-  needs: ["gitleaks", "njsscan", "semgrep"]
-    # The 'needs' keyword specifies that this job depends on the completion of the listed jobs.
-    # This means that the upload_reports job will only run after gitleaks, njsscan, and semgrep jobs have completed.
+    - python3 upload_reports.py gitleaks.json
+    - python3 upload_reports.py njsscan.sarif
+    - python3 upload_reports.py semgrep.json
 
     # GitLab automatically downloads artifacts from the listed jobs 
     # into this job's workspace. This means upload_reports.py will have
