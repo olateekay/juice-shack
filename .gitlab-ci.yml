@@ -158,33 +158,28 @@ semgrep:
       - semgrep.json
     # Stores the scan results as a downloadable artifact.
 
-    upload_reports:
-      stage: test
-      image: python
-      when: always    # Ensures this job runs regardless of previous job status
-
-      before_script:
-        - pip3 install requests
-      script:
-        - python3 upload_reports.py
-
-      needs:
-        - gitleaks
-        - njsscan
-        - semgrep
-      # 'needs' defines which jobs must complete before this job can run
-      # The 'when: always' ensures this job runs after the specified jobs
-      # complete, regardless of their success/failure status
-
-      # GitLab automatically downloads artifacts from the listed jobs 
-      # into this job's workspace. This means upload_reports.py will have
-      # access to:
-      # - gitleaks.json from gitleaks job
-      # - njsscan.sarif from njsscan job  
-      # - semgrep.json from semgrep job
-      # No additional configuration needed for artifact access
-
-
+upload_reports:
+  stage: test
+  image: python
+  when: always    # Ensures this job runs regardless of previous job status
+  before_script:
+    - pip3 install requests
+  script:
+    - python3 upload_reports.py
+  needs:
+    - gitleaks
+    - njsscan
+    - semgrep
+    # 'needs' defines which jobs must complete before this job can run
+    # The 'when: always' ensures this job runs after the specified jobs
+    # complete, regardless of their success/failure status
+    # GitLab automatically downloads artifacts from the listed jobs 
+    # into this job's workspace. This means upload_reports.py will have
+    # access to:
+    # - gitleaks.json from gitleaks job
+    # - njsscan.sarif from njsscan job  
+    # - semgrep.json from semgrep job
+    # No additional configuration needed for artifact access
 
 # STAGE 3: BUILD_IMAGE
 # This job builds a Docker image from the project and pushes it to a Docker registry (example Docker Hub).
