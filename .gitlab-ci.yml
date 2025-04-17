@@ -1,212 +1,126 @@
-# .gitlab-ci.yml
-# This file sets up a CI/CD pipeline for the OWASP Juice Shop project - a Node.js application.
-# The pipeline consists of three stages: 'cache', 'test', and 'build'. Each stage addresses
-# specific concerns such as speeding up dependency installation, running tests, and containerizing the application.
+# GitLab CI pipeline for OWASP Juice Shop (Node.js)
+# Sets up a solid DevSecOps flow: caches dependencies, runs tests, scans for issues, and builds/publishes a container.
 
-# TOP-LEVEL VARIABLES
-# Global variables are defined here so that they can be reused in multiple jobs,
-# helping avoid hardcoding values in different parts of the pipeline.
+# Global defaults
 variables:
-  IMAGE_NAME: dkhanduke/demo-app     # The Docker Hub repository name where the Docker image will be pushed.
-  IMAGE_TAG: juice-shop-1.1          # The version tag for the Docker image (example version identifier).
+  IMAGE_NAME: dkhanduke/demo-app   # Docker repo where the image gets pushed
+  IMAGE_TAG: juice-shop-1.1        # Tag for the image version
 
-# STAGES
-# The stages are executed in a strict order. If a stage fails (example cache or test),
-# the following stages will not run.
+# Pipeline stages — run in this order
 stages:
-  - cache  
-  # First stage: Caches Yarn dependencies to speed up future jobs by reusing them.
-  - test   
-  # Second stage: Runs tests on the code base and performs security scans. Logic - we built this out first.
-  - build 
-  # Third stage: Builds the Docker image and pushes it to the registry.
+  - cache    # Cache dependencies to speed things up
+  - test     # Tests and security scans
+  - build    # Build and ship the container
 
-# STAGE 1: CREATE_CACHE
-# This job installs Yarn dependencies and caches them for later reuse. Caching improves pipeline speed 
+# Stage: cache
+# Grabs Node dependencies once, caches them for other jobs to reuse
 create_cache:
-  image: node:18-bullseye
-  # Using the official Node.js image that comes with Yarn pre-installed.
-  
   stage: cache
-  # This job is part of the 'cache' stage.
-  
+  image: node:18-bullseye          # Node image with Yarn ready to go
   script:
-    - yarn install
-    # Reads the package.json file and installs required Node.js libraries into node_modules.
-  
+    - yarn install                 # Installs everything listed in package.json
   cache:
     key:
       files:
-        - yarn.lock
-        # The yarn.lock file ensures that the exact versions of dependencies are used.
-        # If the file changes, a new cache is generated.
+        - yarn.lock                
+        # Cache updates if yarn.lock changes
     paths:
-      - node_modules/   # The folder where all dependencies are stored.
-      - yarn.lock       # Cache the lock file to maintain version consistency.
-      - .yarn          # Cache the .yarn folder, which can include extra caching or configuration data.
-    policy: pull-push
-    # The pull-push policy means the job will first try to reuse an existing cache and then update it if any changes are detected.
+      - node_modules/              # Stores the dependency folder
+      - yarn.lock                  # Keeps the lock file for consistency
+      - .yarn                      # Yarn's internal cache for faster installs
+    policy: pull-push              # Pulls existing cache, pushes updates
 
-# STAGE 2: YARN_TEST
-# This job uses the cached dependencies and runs the application's tests.
+# Stage: test
+# Runs multiple jobs in parallel: unit tests, secret scanning, SAST, and report uploads
+
+# 1. Runs the app's unit and integration tests
 yarn_test:
-  image: node:18-bullseye
-  # Using the same Node.js + Yarn image for consistency.
-
   stage: test
-  # This job runs in the 'test' stage.
-  
+  image: node:18-bullseye
   script:
-    - yarn install
-    # Ensure dependencies are present. Yarn will usually skip re-downloading if node_modules already exists from the cache.
-    - yarn test
-    # Execute the test suite defined for the project (could be unit tests, integration tests, etc.).
-  
+    - yarn install                 # Pulls from cache, so it's fast
+    - yarn test                    # Begins test suite
   cache:
     key:
       files:
         - yarn.lock
     paths:
-      - node_modules/  # Reuse the cached node_modules to speed up dependency verification.
-      - yarn.lock      # Include the lock file from the cache.
-      - .yarn         # Reuse any cached data in the .yarn folder.
-    policy: pull
-    # The pull policy indicates that this job should only fetch the existing cache without updating it.
+      - node_modules/
+      - yarn.lock
+      - .yarn
+    policy: pull                   # Just uses the cache, doesn't change it
 
-# NEW: Test Stage – GitLeaks Integration in our CI/CD Pipeline
-# This job integrates GitLeaks into the pipeline to scan the source code for sensitive data leaks
-# (example: API keys, passwords) across the Git history. Testing and validating the code is essential prior to building our image.
+# 2. Scans for secrets with GitLeaks
 gitleaks:
   stage: test
-  # This job is assigned to the 'test' stage so that it runs before the Docker image is built.
   image:
-    name: zricethezav/gitleaks:latest
-    # The 'name' key specifies the exact Docker image to use, in this case the latest version
-    # of the GitLeaks image from Docker Hub. Using a mapping instead of a single string allows us
-    # to configure additional options. We have more flexibility when running the image.
-    entrypoint: [""]
-    # The 'entrypoint' key overrides the image's default command. Docker images typically have a
-    # default command (or entrypoint) that runs automatically when the container starts. By setting
-    # entrypoint to an empty array [""], we are disabling the default actions/behavior. 
-    # The image will not execute its built-in command (which might be to run GitLeaks immediately - not sure) when the
-    # container starts. Instead, we provide our own commands in the script section.
-    # Basically we are telling the container "Do not execute any command on startup - wait for the script commands."
+    name: zricethezav/gitleaks:latest  # GitLeaks image for secret detection
+    entrypoint: [""]                   # Overrides default entrypoint for custom script
   script:
-    - gitleaks detect --verbose --source . -f json -r gitleaks.json
-    # The command 'gitleaks detect' runs GitLeaks to scan for secrets in the source code.
-    # The '--source .' parameter tells GitLeaks to scan the current directory.
-    # IMPORTANT NOTE: GitLeaks works by parsing the output of git log -p command. 
-    # Even if sensitive data is removed - history of the repo is still intact, making it a security concern.
-    #
-    # GitLab CI/CD automatically mounts the application source code into each container that runs a job.
-    # This means that the complete code repository is available within the container at a default working directory.
-    # We do not have to manually mount the repository (like with the 'docker run' command).
-    # So the container has access to the Dockerfile and all the source files required by the job.
-    # This auto-mounting simplifies the CI/CD process. Every job starts with the same
-    # pre-mounted code, most likely under the default working directory defined by GitLab.
-  allow_failure: true
-  # Allows the pipeline to continue even if secrets are detected, storing results for review.
+    - gitleaks detect --verbose --source . -f json -r gitleaks.json  # Scans repo (.) for secrets, outputs JSON
+  allow_failure: true                  # Keeps going even if secrets are found
   artifacts:
-    when: always
-    # Stores the scan results regardless of success or failure.
+    when: always                       # Saves the report no matter what
     paths:
-      - gitleaks.json
-    # Makes the scan results downloadable from the pipeline.
+      - gitleaks.json                  # Where the report lands
 
+# 3. Node-specific SAST with njsscan
 njsscan:
   stage: test
-  # njsscan job is in the test stage as part of our SAST (Static Application Security Testing) process.
-  # Since our application is built with Node.js, we need a scanner that can 
-  # analyze JavaScript code for security vulnerabilities. njsscan is designed specifically for Node.js scanning.
-  image: python
-  # njsscan is implemented as a Python package.
+  image: python                        # Python image since njsscan needs it
   before_script:
-    - pip3 install --upgrade njsscan
-    # Before we run the scan we want to ensure njsscan is actually downloaded and up-to-date.
-
+    - pip3 install --upgrade njsscan   # Grabs the latest njsscan
   script:
-    - njsscan --exit-warning . --sarif -o njsscan.sarif
-    # sarif file format is compatible with DefectDojo - the centralized dashboard we will be using.
-    # Run njsscan to scan the entire repository (current directory) for security issues.
-  allow_failure: true
-  # Pipeline continues even if vulnerabilities are found, allowing review of results.
-
+    - njsscan --exit-warning . --sarif -o njsscan.sarif  # Scans repo (.) for Node.js issues, outputs SARIF
+  allow_failure: true                  # Doesn't stop the pipeline on findings (until we can mature our security tools - don't disrupt pipeline)
   artifacts:
     when: always
-    # Stores artifacts whether the job succeeds or fails.
     paths:
-      - njsscan.sarif
-    # Stores the scan results for later inspection.
+      - njsscan.sarif                    # Report file location
 
+# 4. Pattern-based SAST with Semgrep
 semgrep:
   stage: test
-  # Added in the test stage to perform SAST on our Node.js application. Layered security tools approach.
-  image: returntocorp/semgrep
-  # Official Semgrep image for static analysis.
+  image: returntocorp/semgrep          # Semgrep image for scanning
   variables:
-    SEMGREP_RULES: p/javascript  
-    # Specifies the rules to scan for JavaScript-specific vulnerabilities.
+    SEMGREP_RULES: p/javascript        # Uses JS-specific rules
   script:
-    - semgrep ci --json --output semgrep.json
-    # Runs Semgrep in CI mode, which formats the output for integration in CI pipelines.
+    - semgrep ci --json --output semgrep.json  # Scans and spits out a JSON report
   allow_failure: true
-    # Allows the pipeline to proceed even if issues are detected.
   artifacts:
     when: always
-    # Artifacts are saved regardless of job outcome.
     paths:
-      - semgrep.json
-    # Stores the scan results as a downloadable artifact.
+      - semgrep.json                     # Report file
 
+# 5. Uploads all scan reports to DefectDojo
 upload_reports:
   stage: test
   image: python
-  needs: ["gitleaks", "njsscan", "semgrep"]
-  # The 'needs' keyword specifies that this job depends on the completion of the listed jobs.
-  # This means that the upload_reports job will only run after gitleaks, njsscan, and semgrep jobs have completed.
-  when: always    # Ensures this job runs regardless of previous job status
+  needs: ["gitleaks", "njsscan", "semgrep"]  # Waits for scans to finish
+  when: always                               # Runs even if scans fail
   before_script:
-    - pip3 install requests
+    - pip3 install requests                  # Needed for API uploads
   script:
-    - python3 upload_reports.py gitleaks.json
+    - python3 upload_reports.py gitleaks.json  # Sends each report to DefectDojo
     - python3 upload_reports.py njsscan.sarif
     - python3 upload_reports.py semgrep.json
 
-    # GitLab automatically downloads artifacts from the listed jobs 
-    # into this job's workspace. This means upload_reports.py will have
-    # access to:
-    # - gitleaks.json from gitleaks job
-    # - njsscan.sarif from njsscan job  
-    # - semgrep.json from semgrep job
-    # No additional configuration needed for artifact access
-
-# STAGE 3: BUILD_IMAGE
-# This job builds a Docker image from the project and pushes it to a Docker registry (example Docker Hub).
+# Stage: build
+# Builds the Docker image and pushes it to the registry
 build_image:
-  image: docker:24
-  # Using the Docker CLI image to run Docker commands such as 'docker build' and 'docker push'.
-
   stage: build
-  # This job is part of the 'build' stage.
-  
+  image: docker:24                     # Docker CLI image
   services:
-    - docker:24-dind
-    # Docker-in-Docker (dind) provides a Docker daemon within the container, allowing the job to build and push images.
-  
-  # Note: In a production environment, credentials must be secured using GitLab CI/CD variables. 
+    - docker:24-dind                   # Docker-in-Docker for building
   variables:
+    DOCKER_USER: $DOCKER_USER          # Pulls creds from GitLab variables
     DOCKER_PASS: $DOCKER_PASS
-    DOCKER_USER: $DOCKER_USER
-    # Credentials for Docker registry login, stored securely as GitLab CI/CD variables.
-
   before_script:
-    # Securely log in to Docker using the password provided via standard input. This avoids exposing the password in logs.
-    - echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-
+    - echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin  # Logs into Docker securely
   script:
-    # Build the Docker image using the Dockerfile in the current directory.
-    # The -t flag tags the image with a combination of IMAGE_NAME and IMAGE_TAG.
-    # Example tag: dkhanduke/demo-app:juice-shop-1.1
-    - docker build -t $IMAGE_NAME:$IMAGE_TAG .
-    # Push the built image to the Docker registry (example Docker Hub).
-    - docker push $IMAGE_NAME:$IMAGE_TAG
+    - docker build -t "$IMAGE_NAME:$IMAGE_TAG" .  # Builds image from repo root (.)
+    - docker push "$IMAGE_NAME:$IMAGE_TAG"        # Pushes it to the registry
+
+# Why use '.' with GitLabs:
+# The '.' means the current directory, which is the root of the repo GitLab CI clones into the job's container.
+# GitLab auto-loads the full repo at '.', so tools like gitleaks, njsscan, and docker build can scan or build the whole project.
