@@ -30,7 +30,7 @@ if not dojo_url:
 # FIX: replaced hardcoded url with environment variable
 url = f"{dojo_url}/api/v2/import-scan/"
 
-# Map filename → scan_type recognized by DefectDojo
+# Map filename -> scan_type recognized by DefectDojo
 if file_name == 'gitleaks.json':
     scan_type = 'Gitleaks Scan'
 elif file_name == 'semgrep.json':
