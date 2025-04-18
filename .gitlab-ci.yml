@@ -1,5 +1,5 @@
 # GitLab CI pipeline for OWASP Juice Shop (Node.js)
-# Sets up a solid DevSecOps flow: caches dependencies, runs tests, scans for issues, and builds/publishes a container.
+# Sets up a solid DevSecOps flow - caches dependencies, runs tests, scans for issues, and builds/publishes a container.
 
 # Global defaults
 variables:
@@ -38,7 +38,7 @@ yarn_test:
   stage: test
   image: node:18-bullseye
   script:
-    - yarn install                 # Pulls from cache, so it's fast
+    - yarn install                 # Pulls from cache, so it's faster
     - yarn test                    # Begins test suite
   cache:
     key:
@@ -85,7 +85,7 @@ semgrep:
   variables:
     SEMGREP_RULES: p/javascript        # Uses JS-specific rules
   script:
-    - semgrep ci --json --output semgrep.json  # Scans and spits out a JSON report
+    - semgrep ci --json --output semgrep.json  # Scans and produces a JSON report
   allow_failure: true
   artifacts:
     when: always
