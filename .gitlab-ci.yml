@@ -121,6 +121,7 @@ build_image:
     - docker build -t "$IMAGE_NAME:$IMAGE_TAG" .  # Builds image from repo root (.)
     - docker push "$IMAGE_NAME:$IMAGE_TAG"        # Pushes it to the registry
 
+# Test
 # Why use '.' with GitLabs:
 # The '.' means the current directory, which is the root of the repo GitLab CI clones into the job's container.
 # GitLab auto-loads the full repo at '.', so tools like gitleaks, njsscan, and docker build can scan or build the whole project.
