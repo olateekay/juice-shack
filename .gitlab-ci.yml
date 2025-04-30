@@ -96,7 +96,7 @@ semgrep:
 retire:
   stage: test
   image: node:18-bullseye
-    cache:
+  cache:
     key:
       files:
         - yarn.lock
