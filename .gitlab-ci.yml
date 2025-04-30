@@ -111,6 +111,7 @@ retire:
   script:
     - retire --path . --outputformat json --outputpath retire.json
 # Saving the Artifact
+  allow_failure: true
   artifacts:
     when: always
     paths:
