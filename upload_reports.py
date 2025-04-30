@@ -37,6 +37,8 @@ elif file_name == 'semgrep.json':
     scan_type = 'Semgrep JSON Report'
 elif file_name == 'njsscan.sarif':
     scan_type = 'SARIF'
+elif file_name == 'retire.json':
+    scan_type = 'Retire.js Scan"
 else:
     print(f"Unknown file type: {file_name}")
     sys.exit(1)

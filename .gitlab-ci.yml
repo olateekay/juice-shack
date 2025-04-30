@@ -92,11 +92,36 @@ semgrep:
     paths:
       - semgrep.json                     # Report file
 
-# 5. Uploads all scan reports to DefectDojo
+# Implementing SCA scanning with Retire.JS
+retire:
+  stage: test
+  image: node:18-bullseye
+    cache:
+    key:
+      files:
+        - yarn.lock
+    paths:
+      - node_modules/
+      # download the node_modules folder - we can perform quick scanning of the module.
+      - yarn.lock
+      - .yarn
+    policy: pull  
+  before_script:
+    - npm install -g retire
+  script:
+    - retire --path . --outputformat json --outputpath retire.json
+# Saving the Artifact
+  artifacts:
+    when: always
+    paths:
+      - retire.json    
+    
+
+# 5. Uploads all scan reports to DefectDojo - if this becomes too large we can create a new stage
 upload_reports:
   stage: test
   image: python
-  needs: ["gitleaks", "njsscan", "semgrep"]  # Waits for scans to finish
+  needs: ["gitleaks", "njsscan", "semgrep", "retire"]  # Waits for scans to finish
   when: always                               # Runs even if scans fail
   before_script:
     - pip3 install requests                  # Needed for API uploads
@@ -104,6 +129,7 @@ upload_reports:
     - python3 upload_reports.py gitleaks.json  # Sends each report to DefectDojo
     - python3 upload_reports.py njsscan.sarif
     - python3 upload_reports.py semgrep.json
+    - python3 upload_reports.py retire.json   # upload newly generated retire.json SCA scan to DefectDojo
 
 # Stage: build
 # Builds the Docker image and pushes it to the registry
