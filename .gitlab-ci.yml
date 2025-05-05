@@ -76,7 +76,7 @@ njsscan:
   artifacts:
     when: always
     paths:
-      - njsscan.sarif                    # Report file location
+      - njsscan.sarif                    # Report file location # Test
 
 # 4. Pattern-based SAST with Semgrep
 semgrep:
