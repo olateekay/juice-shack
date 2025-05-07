@@ -1,0 +1,154 @@
+# GitLab CI pipeline for OWASP Juice Shop (Node.js)
+# Sets up a solid DevSecOps flow - caches dependencies, runs tests, scans for issues, and builds/publishes a container.
+
+# Global defaults
+variables:
+  IMAGE_NAME: dkhanduke/demo-app   # Docker repo where the image gets pushed
+  IMAGE_TAG: juice-shop-1.1        # Tag for the image version
+
+# Pipeline stages — run in this order
+stages:
+  - cache    # Cache dependencies to speed things up
+  - test     # Tests and security scans
+  - build    # Build and ship the container
+
+# Stage: cache
+# Grabs Node dependencies once, caches them for other jobs to reuse
+create_cache:
+  stage: cache
+  image: node:18-bullseye          # Node image with Yarn ready to go
+  script:
+    - yarn install                 # Installs everything listed in package.json
+  cache:
+    key:
+      files:
+        - yarn.lock                
+        # Cache updates if yarn.lock changes
+    paths:
+      - node_modules/              # Stores the dependency folder
+      - yarn.lock                  # Keeps the lock file for consistency
+      - .yarn                      # Yarn's internal cache for faster installs
+    policy: pull-push              # Pulls existing cache, pushes updates
+
+# Stage: test
+# Runs multiple jobs in parallel: unit tests, secret scanning, SAST, and report uploads
+
+# 1. Runs the app's unit and integration tests
+yarn_test:
+  stage: test
+  image: node:18-bullseye
+  script:
+    - yarn install                 # Pulls from cache, so it's faster
+    - yarn test                    # Begins test suite
+  cache:
+    key:
+      files:
+        - yarn.lock
+    paths:
+      - node_modules/
+      - yarn.lock
+      - .yarn
+    policy: pull                   # Just uses the cache, doesn't change it
+
+# 2. Scans for secrets with GitLeaks
+gitleaks:
+  stage: test
+  image:
+    name: zricethezav/gitleaks:latest  # GitLeaks image for secret detection
+    entrypoint: [""]                   # Overrides default entrypoint for custom script
+  script:
+    - gitleaks detect --verbose --source . -f json -r gitleaks.json  # Scans repo (.) for secrets, outputs JSON
+  allow_failure: true                  # Keeps going even if secrets are found
+  artifacts:
+    when: always                       # Saves the report no matter what
+    paths:
+      - gitleaks.json                  # Where the report lands
+
+# 3. Node-specific SAST with njsscan
+njsscan:
+  stage: test
+  image: python                        # Python image since njsscan needs it
+  before_script:
+    - pip3 install --upgrade njsscan   # Grabs the latest njsscan
+  script:
+    - njsscan --exit-warning . --sarif -o njsscan.sarif  # Scans repo (.) for Node.js issues, outputs SARIF
+  allow_failure: true                  # Doesn't stop the pipeline on findings (until we can mature our security tools - don't disrupt pipeline)
+  artifacts:
+    when: always
+    paths:
+      - njsscan.sarif                    # Report file location # Test
+
+# 4. Pattern-based SAST with Semgrep
+semgrep:
+  stage: test
+  image: returntocorp/semgrep          # Semgrep image for scanning
+  variables:
+    SEMGREP_RULES: p/javascript        # Uses JS-specific rules
+  script:
+    - semgrep ci --json --output semgrep.json  # Scans and produces a JSON report
+  allow_failure: true
+  artifacts:
+    when: always
+    paths:
+      - semgrep.json                     # Report file
+
+# Implementing SCA scanning with Retire.JS
+retire:
+  stage: test
+  image: node:18-bullseye
+  cache:
+    key:
+      files:
+        - yarn.lock
+    paths:
+      - node_modules/
+      # download the node_modules folder - we can perform quick scanning of the module.
+      - yarn.lock
+      - .yarn
+    policy: pull  
+  before_script:
+    - npm install -g retire
+  script:
+    - retire --path . --outputformat json --outputpath retire.json
+# Saving the Artifact
+  allow_failure: true
+  artifacts:
+    when: always
+    paths:
+      - retire.json    
+    
+
+# 5. Uploads all scan reports to DefectDojo - if this becomes too large we can create a new stage
+upload_reports:
+  stage: test
+  image: python
+  needs: ["gitleaks", "njsscan", "semgrep", "retire"]  # Waits for scans to finish
+  when: always                               # Runs even if scans fail
+  before_script:
+    - pip3 install requests                  # Needed for API uploads
+  script:
+    - python3 upload_reports.py gitleaks.json  # Sends each report to DefectDojo
+    - python3 upload_reports.py njsscan.sarif
+    - python3 upload_reports.py semgrep.json
+    - python3 upload_reports.py retire.json   # upload newly generated retire.json SCA scan to DefectDojo
+
+# Stage: build
+# Builds the Docker image and pushes it to the registry
+build_image:
+  stage: build
+  image: docker:24                     # Docker CLI image
+  services:
+    - docker:24-dind                   # Docker-in-Docker for building
+  variables:
+    DOCKER_USER: $DOCKER_USER          # Pulls creds from GitLab variables
+    DOCKER_PASS: $DOCKER_PASS
+  before_script:
+    - echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin  # Logs into Docker securely
+  script:
+    - docker build -t "$IMAGE_NAME:$IMAGE_TAG" .  # Builds image from repo root (.)
+    - docker push "$IMAGE_NAME:$IMAGE_TAG"        # Pushes it to the registry
+
+# Test
+# Why use '.' with GitLabs:
+# The '.' means the current directory, which is the root of the repo GitLab CI clones into the job's container.
+# GitLab auto-loads the full repo at '.', so tools like gitleaks, njsscan, and docker build can scan or build the whole project.
