@@ -1,0 +1,28 @@
+variable:
+ IMAGE_NAME: falghanmi22/demo-app
+ IMAGE_TAG: juice-shop
+
+stages:
+- test
+- build
+
+yarn_test:
+ image: node:18-bullseye
+ stage: test
+ script:
+ - yarn install
+ - yarn_test
+
+build_image:
+ stage: build
+ image: douker:24
+ services:
+ - docker:24-dind
+ variable:
+  DOCKER_PASS: 6HGGhKTziYSPq
+  DOCKER_USER:  falghanmi22
+ before_script:
+ - echo $DOCKER_PASS | docker login -u $DOCKER_user --password-stdin
+ script:
+ - docker build -t  falghanmi22/demo-app:juice-shop-1.1
+ - docker push falghanmi22/demo-app:juice-shop-1.1
