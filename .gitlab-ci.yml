@@ -41,5 +41,5 @@ build_image:
   #   - echo $DOCKER_PASS | docker login -u $DOCKER_PASS --password-stdin
   script: 
     - docker login --username=$DOCKER_USER --password=$DOCKER_PASS
-    - docker build -t $IMAGE_NAME/juice_app:$IMAGE_TAG .
-    - docker push $IMAGE_NAME/juice_app:$IMAGE_TAG
+    - docker build -t $IMAGE_NAME/:$IMAGE_TAG .
+    - docker push $IMAGE_NAME/:$IMAGE_TAG
