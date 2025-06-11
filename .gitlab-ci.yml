@@ -53,6 +53,14 @@ stages:
   - test
   - build
 
+gitleaks:
+  stage: test
+  image: 
+    name: zricethezav/gitleaks
+    entrypoint: [**]
+  script:
+  - gitleaks detect --verbose --source
+
 create_cache:
   image: node:18-bullseye
   stage: cache
