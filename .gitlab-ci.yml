@@ -58,7 +58,7 @@ njsscan:
 
 semgrep:
   stage: test
-  image: returntocorp/semgrep
+  image: semgrep/semgrep
   variables:
     SEMGREP_RULES: p/javascript
   script:
