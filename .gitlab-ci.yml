@@ -1,0 +1,27 @@
+variables:
+  IMAGE_NAME: hatemelbolok/juice_shop:tagname
+  IMAGE_TAG: juice-shop1.1
+stages:
+  - test
+  - build
+
+yarn_test:
+  image: node:18-bullseye
+  stage: test
+  script:
+    - yarn install
+    - yarn test
+
+build_image:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_PASS: DeHu@10Sa3030
+    DOCKER_USER: hatemeblolok1995@gmail.com
+  before_script:
+    - echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+  script:
+    - docker build -t $IMAGE_NAME:$IMAGE_NAME .
+    - docker push $IMAGE_NAME:$IMAGE_NAME
