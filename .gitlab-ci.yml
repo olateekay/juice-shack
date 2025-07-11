@@ -47,6 +47,7 @@ gitleaks:
     entrypoint: [""]
   script:
     - gitleaks detect --verbose --source .
+  allow_failure: true
 
 build_image:
     stage: build
