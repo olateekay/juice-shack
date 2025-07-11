@@ -11,7 +11,9 @@ create_cache:
     image: node:18-bullseye
     stage: cache
     script:
-        - yarn install
+        - yarn config set ignore-engines true
+        - yarn install --frozen-lockfile
+        - yarn test
     cache:
         key:
             files:
