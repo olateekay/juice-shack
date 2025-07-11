@@ -46,7 +46,7 @@ gitleaks:
     name: zricethezav/gitleaks
     entrypoint: [""]
   script:
-    - gitleaks detect --verbose --source
+    - gitleaks detect --verbose --source .
 
 build_image:
     stage: build
