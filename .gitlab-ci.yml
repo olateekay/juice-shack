@@ -7,7 +7,7 @@ stages:
     - build
 
 yarn_test:
-    image: node:20.19.3-bullseye
+    image: node:18-bullseye
     stage: test
     script:
         - yarn install
