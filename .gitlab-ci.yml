@@ -24,7 +24,6 @@ create_cache:
             - .yarb
         policy: pull-push
         
-
 yarn_test:
     image: node:18-bullseye
     stage: test
@@ -41,6 +40,13 @@ yarn_test:
             - yarn.lock
             - .yarb
         policy: pull
+gitleaks:
+  stage: test
+  image: 
+    name: zricethezav/gitleaks
+    entrypoint: [""]
+  script:
+    - gitleaks detect --verbose --source
 
 build_image:
     stage: build
