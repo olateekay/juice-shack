@@ -49,13 +49,13 @@ gitleaks:
     - gitleaks detect --verbose --source .
   allow_failure: true
 
-njssscan:
+njsscan:
   stage: test
   image: python
   before_script:
     - pip3 install --upgrade njsscan
-script:
-  - njscan .
+  script:
+    - njsscan .
 
 build_image:
     stage: build
