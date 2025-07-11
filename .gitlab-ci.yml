@@ -1,12 +1,13 @@
 variables:
   IMAGE_NAME: belliotnick/juice-shop-project:juice-shop
   IMAGE_TAG: juice-shop-1.0
+
 stages:
     - test
     - build
-yarn_test:
 
-    image: node:18
+yarn_test:
+    image: node:20.19.3-bullseye
     stage: test
     script:
         - yarn install
