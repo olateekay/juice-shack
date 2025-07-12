@@ -90,7 +90,7 @@ retire:
       - node_modules/
       - yarn.lock
       - .yarn
-    policy: pull-push
+    policy: pull
   before_script:
     - npm install -g retire
   script:
