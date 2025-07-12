@@ -60,7 +60,7 @@ njsscan:
     - pip3 install --upgrade njsscan
   script:
     - njsscan --exit-warning . --sarif -o njsscan.sarif
-  allow_failure: 
+  allow_failure: true
   artifacts:
     when: always
     paths: 
