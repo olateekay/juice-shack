@@ -79,11 +79,15 @@ semgrep:
     paths: 
       - semgrep.json
   
-  upload_reports:
-    stage: test
-    image: python
-    script: 
-      - python3 upload-reports.py
+upload_reports:
+  stage: test
+  image: python
+  needs: ["gitleaks"]
+  when: always
+  before_script:
+    - pip3 install requests
+  script: 
+    - python3 upload-reports.py
 
 
 build_image:
