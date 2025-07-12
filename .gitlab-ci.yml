@@ -55,7 +55,7 @@ njsscan:
   before_script:
     - pip3 install --upgrade njsscan
   script:
-    - njsscan --exit-warning
+    - njsscan --exit-warning .
   allow_failure: true
 
 semgrep:
