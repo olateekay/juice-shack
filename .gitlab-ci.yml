@@ -21,7 +21,7 @@ create_cache:
         paths:
             - node_modules/
             - yarn.lock
-            - .yarb
+            - .yarn
         policy: pull-push
         
 yarn_test:
@@ -38,7 +38,7 @@ yarn_test:
         paths:
             - node_modules/
             - yarn.lock
-            - .yarb
+            - .yarn
         policy: pull
 gitleaks:
   stage: test
