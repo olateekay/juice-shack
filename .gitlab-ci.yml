@@ -124,8 +124,11 @@ build_image:
     - docker:24-dind
     
   before_script:
-    - apk --no-cache add python3 py3-pip
-    - pip3 install --no-cache-dir awscli
+    - apk --no-cache add python3 py3-venv
+    - python3 -m venv /aws-env
+    - source /aws-env/bin/activate
+    - pip install --no-cache-dir awscli
+
     - aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_ACCOUNT_ID.amazonaws.com
   script:
     - docker build -t $IMAGE_NAM:$CI_COMMIT_SHA -t $AIMAGE_NAM:latest .
