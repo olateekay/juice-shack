@@ -1,6 +1,9 @@
 variables:
-  IMAGE_NAME: belliotnick/juice-shop-project
-  IMAGE_TAG: juice-shop-1.0
+  AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+  AWS_ACCOUNT_ID: $AWS_ACCOUNT_ID
+  AWS_DEFAULT_REGION: $AWS_ACCOUNT_ID
+  AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+  IMAGE_NAME: AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/juice-shop
 
 stages:
   - cache
@@ -94,36 +97,37 @@ retire:
   before_script:
     - npm install -g retire
   script:
-    - retire --path . --outputformat json --outputpath retire.json || true
+    - retire --path . --outputformat json --outputpath retire.json
+  allow_failure: true
   artifacts:
     when: always
     paths: 
       - retire.json
   
-upload_reports:
-  stage: test
-  image: python
-  needs: ["gitleaks", "njsscan", "semgrep", "retire"]
-  when: always
-  before_script:
-    - pip3 install requests
-  script: 
-    - python3 upload-reports.py gitleaks.json
-    - python3 upload-reports.py njsscan.sarif
-    - python3 upload-reports.py semgrep.json
-    - python3 upload-reports.py retire.json
+# upload_reports:
+#   stage: test
+#   image: python
+#   needs: ["gitleaks", "njsscan", "semgrep", "retire"]
+#   when: always
+#   before_script:
+#     - pip3 install requests
+#   script: 
+#     - python3 upload-reports.py gitleaks.json
+#     - python3 upload-reports.py njsscan.sarif
+#     - python3 upload-reports.py semgrep.json
+#     - python3 upload-reports.py retire.json
 
 build_image:
   stage: build
   image: docker:24
   services:
     - docker:24-dind
-  variables:
-    DOCKER_PASS: $DOCKER_HUB_TOKEN
-    DOCKER_USER: $DOCKER_HUB_USERNAME
-
+    
   before_script:
-    - echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+    - apk --no cache add python3 py3-pip
+    - pip install --no-cache-dir awscli
+    - aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_ACCOUNT_ID.amazonaws.com
   script:
-    - docker build -t $IMAGE_NAME:IMAGE_TAG .
-    - docker push $IMAGE_NAME:IMAGE_TAG
+    - docker build -t $IMAGE_NAM:$CI_COMMIT_SHA -t $AIMAGE_NAM:latest .
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
+    - docker push $IMAGE_NAME:latest
