@@ -123,11 +123,10 @@ build_image:
   services:
     - docker:24-dind
   before_script:
-  - apk --no-cache add python3 py3-pip curl
-  - pip3 config set global.break-system-packages true
-  - pip3 install --no-cache-dir awscli
-
-    - aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_ACCOUNT_ID.amazonaws.com
+    - apk --no-cache add python3 py3-pip curl
+    - pip3 config set global.break-system-packages true
+    - pip3 install --no-cache-dir awscli
+    - aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
   script:
     - docker build -t $IMAGE_NAM:$CI_COMMIT_SHA -t $AIMAGE_NAM:latest .
     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
