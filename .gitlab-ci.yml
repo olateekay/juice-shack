@@ -128,6 +128,6 @@ build_image:
     - pip3 install --no-cache-dir awscli
     - aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
   script:
-    - docker build -t $IMAGE_NAM:$CI_COMMIT_SHA -t $AIMAGE_NAM:latest .
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -t $IMAGE_NAME:latest .
     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
     - docker push $IMAGE_NAME:latest
