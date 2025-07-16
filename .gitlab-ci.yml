@@ -4,32 +4,32 @@ variables:
   AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
   AWS_ACCOUNT_ID: $AWS_ACCOUNT_ID
   IMAGE_NAME: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/juice-shop
-  SERVER_IP: 54.160.255.232
-  SERVER_USER: ubuntu
+  SERVER_IP: ec2-54-160-255-232
+  SERVER_USER: ec2
 
 
 stages:
-  - cache
-  - test
+  # - cache
+  # - test
   - build
   - deploy
 
-create_cache:
-  image: node:18-bullseye
-  stage: cache
-  script:
-    - yarn config set ignore-engines true
-    - yarn install --frozen-lockfile
-    - yarn test
-  cache:
-    key:
-      files:
-        - yarn.lock
-    paths:
-      - node_modules/
-      - yarn.lock
-      - .yarn
-    policy: pull-push
+# create_cache:
+#   image: node:18-bullseye
+#   stage: cache
+#   script:
+#     - yarn config set ignore-engines true
+#     - yarn install --frozen-lockfile
+#     - yarn test
+#   cache:
+#     key:
+#       files:
+#         - yarn.lock
+#     paths:
+#       - node_modules/
+#       - yarn.lock
+#       - .yarn
+#     policy: pull-push
         
 # yarn_test:
 #   image: node:18-bullseye
