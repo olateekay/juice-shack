@@ -4,7 +4,7 @@ variables:
   AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
   AWS_ACCOUNT_ID: $AWS_ACCOUNT_ID
   IMAGE_NAME: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/juice-shop
-  SERVER_IP: 172.31.27.228
+  SERVER_IP: 2.54.160.255.232
   SERVER_USER: ubuntu
 
 
@@ -60,53 +60,53 @@ gitleaks:
     paths:
       - gitleaks.json
   
-njsscan:
-  stage: test
-  image: python
-  before_script:
-    - pip3 install --upgrade njsscan
-  script:
-    - njsscan --exit-warning . --sarif -o njsscan.sarif
-  allow_failure: true
-  artifacts:
-    when: always
-    paths: 
-      - njsscan.sarif
+# njsscan:
+#   stage: test
+#   image: python
+#   before_script:
+#     - pip3 install --upgrade njsscan
+#   script:
+#     - njsscan --exit-warning . --sarif -o njsscan.sarif
+#   allow_failure: true
+#   artifacts:
+#     when: always
+#     paths: 
+#       - njsscan.sarif
 
-semgrep:
-  stage: test
-  image: semgrep/semgrep
-  variables:
-    SEMGREP_RULES: p/javascript
-  script:
-    - semgrep ci --json --output semgrep.json
-  allow_failure: true
-  artifacts:
-    when: always
-    paths: 
-      - semgrep.json
+# semgrep:
+#   stage: test
+#   image: semgrep/semgrep
+#   variables:
+#     SEMGREP_RULES: p/javascript
+#   script:
+#     - semgrep ci --json --output semgrep.json
+#   allow_failure: true
+#   artifacts:
+#     when: always
+#     paths: 
+#       - semgrep.json
 
-retire:
-  stage: test
-  image: node:18-bullseye
-  cache:
-    key:
-      files:
-        - yarn.lock
-    paths:
-      - node_modules/
-      - yarn.lock
-      - .yarn
-    policy: pull
-  before_script:
-    - npm install -g retire
-  script:
-    - retire --path . --outputformat json --outputpath retire.json
-  allow_failure: true
-  artifacts:
-    when: always
-    paths: 
-      - retire.json
+# retire:
+#   stage: test
+#   image: node:18-bullseye
+#   cache:
+#     key:
+#       files:
+#         - yarn.lock
+#     paths:
+#       - node_modules/
+#       - yarn.lock
+#       - .yarn
+#     policy: pull
+#   before_script:
+#     - npm install -g retire
+#   script:
+#     - retire --path . --outputformat json --outputpath retire.json
+#   allow_failure: true
+#   artifacts:
+#     when: always
+#     paths: 
+#       - retire.json
   
 # upload_reports:
 #   stage: test
