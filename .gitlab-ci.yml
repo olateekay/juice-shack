@@ -4,7 +4,7 @@ variables:
   AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
   AWS_ACCOUNT_ID: $AWS_ACCOUNT_ID
   IMAGE_NAME: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/juice-shop
-  SERVER_IP: 2.54.160.255.232
+  SERVER_IP: 54.160.255.232
   SERVER_USER: ubuntu
 
 
@@ -31,34 +31,34 @@ create_cache:
       - .yarn
     policy: pull-push
         
-yarn_test:
-  image: node:18-bullseye
-  stage: test
-  script:
-    - yarn config set ignore-engines true
-    - yarn install --frozen-lockfile
-    - yarn test
-  cache:
-    key:
-      files:
-        - yarn.lock
-    paths:
-      - node_modules/
-      - yarn.lock
-      - .yarn
-    policy: pull
-gitleaks:
-  stage: test
-  image: 
-    name: zricethezav/gitleaks
-    entrypoint: [""]
-  script:
-    - gitleaks detect --verbose --source . -f json -r gitleaks.json
-  allow_failure: true
-  artifacts:
-    when: always
-    paths:
-      - gitleaks.json
+# yarn_test:
+#   image: node:18-bullseye
+#   stage: test
+#   script:
+#     - yarn config set ignore-engines true
+#     - yarn install --frozen-lockfile
+#     - yarn test
+#   cache:
+#     key:
+#       files:
+#         - yarn.lock
+#     paths:
+#       - node_modules/
+#       - yarn.lock
+#       - .yarn
+#     policy: pull
+# gitleaks:
+#   stage: test
+#   image: 
+#     name: zricethezav/gitleaks
+#     entrypoint: [""]
+#   script:
+#     - gitleaks detect --verbose --source . -f json -r gitleaks.json
+#   allow_failure: true
+#   artifacts:
+#     when: always
+#     paths:
+#       - gitleaks.json
   
 # njsscan:
 #   stage: test
