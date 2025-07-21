@@ -122,7 +122,9 @@ trivy:
   services:
     - docker:24-dind
   before_script:
-    - apk --no-cache add curl python3 py3-pip
+    - apk update && apk --no-cache add python3 py3-pip
+    - python3 -m venv /venv
+    - . /venv/bin/activate
     - pip3 install --no-cache-dir awscli
     - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
     - aws ecr get-login-password | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
@@ -184,8 +186,3 @@ deploy_prod:
   script:
     - echo "deploying to production environment"
   when: manual
-
-
-
-
-
