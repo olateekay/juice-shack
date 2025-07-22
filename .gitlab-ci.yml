@@ -108,18 +108,18 @@ retire:
     paths: 
       - retire.json
   
-upload_reports:
-  stage: test
-  image: python
-  needs: ["gitleaks", "njsscan", "semgrep", "retire"]
-  when: always
-  before_script:
-    - pip3 install requests
-  script: 
-    - python3 upload-reports.py gitleaks.json
-    - python3 upload-reports.py njsscan.sarif
-    - python3 upload-reports.py semgrep.json
-    - python3 upload-reports.py retire.json
+# upload_reports:
+#   stage: test
+#   image: python
+#   needs: ["gitleaks", "njsscan", "semgrep", "retire"]
+#   when: always
+#   before_script:
+#     - pip3 install requests
+#   script: 
+#     - python3 upload-reports.py gitleaks.json
+#     - python3 upload-reports.py njsscan.sarif
+#     - python3 upload-reports.py semgrep.json
+#     - python3 upload-reports.py retire.json
 
 build_image:
   stage: build
