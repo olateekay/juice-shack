@@ -12,7 +12,7 @@ env:
 
 jobs:
   test:
-    name: Run yarn tests
+    name: Run yarn test
     runs-on: ubuntu-latest
 
     steps:
