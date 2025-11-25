@@ -1,54 +1,85 @@
-# .github/workflows/ci.yml
-name: CI
+name: CI Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
+    branches:
+      - main
 
 env:
-  IMAGE_NAME: juice-shack/demo-app
+  IMAGE_NAME: juiceshack/demo-app
   IMAGE_TAG: juice-shack-1.1
 
 jobs:
-  test:
-    name: Run npm test
+  create_cache:
     runs-on: ubuntu-latest
-
+    container:
+      image: node:18-bullseye
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - name: Cache dependencies
+        uses: actions/cache@v4
         with:
-          node-version: 18
-          cache: npm
+          path: |
+            node_modules/
+            yarn.lock
+            .yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
 
       - name: Install dependencies
-        run: npm ci
+        run: yarn install
 
-      - name: Run tests
-        run: npm test
-
-  build_image:
-    name: Build and push Docker image
+  yarn_test:
     runs-on: ubuntu-latest
-    needs: test
-
-    env:
-      DOCKER_USER: ${{ secrets.DOCKER_USER }}
-      DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
-
+    container:
+      image: node:18-bullseye
+    needs: create_cache
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Log in to Docker registry
-        run: echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+      - name: Restore dependencies cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules/
+            yarn.lock
+            .yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
 
-      - name: Build Docker image
-        run: docker build -t "${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}" .
+      - name: Install dependencies
+        run: yarn install
 
-      - name: Push Docker image
-        run: docker push "${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+      - name: Run tests
+        run: yarn test
+
+  build_image:
+    runs-on: ubuntu-latest
+    needs: yarn_test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASS }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
