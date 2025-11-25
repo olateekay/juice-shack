@@ -9,7 +9,7 @@ on:
       - main
 
 env:
-  IMAGE_NAME: juiceshack/demo-app
+  IMAGE_NAME: devytk/demo-app
   IMAGE_TAG: juice-shack-1.1
 
 jobs:
