@@ -16,7 +16,7 @@ jobs:
   create_cache:
     runs-on: ubuntu-latest
     container:
-      image: node:18-bullseye
+      image: node:20-bullseye
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -38,7 +38,7 @@ jobs:
   yarn_test:
     runs-on: ubuntu-latest
     container:
-      image: node:18-bullseye
+      image: node:20-bullseye
     needs: create_cache
     steps:
       - name: Checkout code
